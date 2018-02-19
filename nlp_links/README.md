@@ -19,3 +19,6 @@ for Conversational Question Answering Systems
 * https://web.stanford.edu/class/cs124/lec/chatbot.pdf - CS 124/LINGUIST 180 From Languages to Information
 * https://github.com/karthikncode/nlp-datasets - A list of datasets/corpora for NLP tasks, in reverse chronological order.
 * https://www.topbots.com/50-innovative-ways-brands-use-chatbots/
+* http://papers.www2017.com.au.s3-website-ap-southeast-2.amazonaws.com/proceedings/p1191.pdf - Automated Template Generation for Question Answering
+over Knowledge Graphs
+* http://www.icst.pku.edu.cn/F/intro/leizou/documentation/pdf/Z15SIGMOD-weiguo.pdf — An Uncertain Graph Similarity Join Approach
