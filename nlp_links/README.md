@@ -17,3 +17,5 @@ for Conversational Question Answering Systems
 * https://github.com/sebischair/NLU-Evaluation-Corpora - Corpora for evaluating NLU services (like API.ai, RASA, Microsoft LUIS, ...)
 * https://chatbotsmagazine.com/contextual-chat-bots-with-tensorflow-4391749d0077 - Contextual Chatbots with Tensorflow
 * https://web.stanford.edu/class/cs124/lec/chatbot.pdf - CS 124/LINGUIST 180 From Languages to Information
+* https://github.com/karthikncode/nlp-datasets - A list of datasets/corpora for NLP tasks, in reverse chronological order.
+* https://www.topbots.com/50-innovative-ways-brands-use-chatbots/
