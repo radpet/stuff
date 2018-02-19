@@ -12,3 +12,6 @@ to Goal-Oriented Dialogue Systems
 * https://arxiv.org/pdf/1510.08565.pdf - Attention with Intention for a Neural Network
 Conversation Model
 * http://www.wildml.com/2016/07/deep-learning-for-chatbots-2-retrieval-based-model-tensorflow/  -Deep Learning for Chatbots, Part 2 – Implementing a Retrieval-Based Model in Tensorflow
+* http://www.sigdial.org/workshops/conference18/proceedings/pdf/SIGDIAL22.pdf - Evaluating Natural Language Understanding Services
+for Conversational Question Answering Systems
+* https://github.com/sebischair/NLU-Evaluation-Corpora - Corpora for evaluating NLU services (like API.ai, RASA, Microsoft LUIS, ...)
