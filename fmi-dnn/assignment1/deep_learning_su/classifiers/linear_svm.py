@@ -80,19 +80,22 @@ def svm_loss_vectorized(W, X, y, reg):
   #############################################################################
     
   scores = X.dot(W)
-  y_one_hot = np.zeros(W.shape[1])
-  y_one_hot[np.arange(W.shape[1]), y] = 1
-  margin = (scores - scores[y_one_hot]) + 1
-  positive_margin = margin*(margin > 0).astype(np.int)
-  loss = np.sum(np.sum(positive_margin, axis=1),axis=0)
-  loss -= W.shape[0]
-  loss /= W.shape[0]
+  # https://docs.scipy.org/doc/numpy/reference/generated/numpy.arange.html
+  y_scores = scores[np.arange(X.shape[0]),y]
+  print((scores - y_scores[:,np.newaxis]).shape)
+  margins = np.maximum(0, scores - y_scores[:,np.newaxis] + 1)
+  margins[np.arange(X.shape[0]),y] = 0
+    
+  loss = np.sum(np.sum(margins, axis=1), axis=0) / X.shape[0]
+
   loss += reg*np.sum(W*W)
 
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
 
+
+  
 
   #############################################################################
   # TODO:                                                                     #
