@@ -81,8 +81,8 @@ def svm_loss_vectorized(W, X, y, reg):
     
   scores = X.dot(W)
   # https://docs.scipy.org/doc/numpy/reference/generated/numpy.arange.html
+  # np.arange() = [0 - N -1], y -> correct classes
   y_scores = scores[np.arange(X.shape[0]),y]
-  print((scores - y_scores[:,np.newaxis]).shape)
   margins = np.maximum(0, scores - y_scores[:,np.newaxis] + 1)
   margins[np.arange(X.shape[0]),y] = 0
     
@@ -93,10 +93,7 @@ def svm_loss_vectorized(W, X, y, reg):
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
-
-
   
-
   #############################################################################
   # TODO:                                                                     #
   # Implement a vectorized version of the gradient for the structured SVM     #
@@ -106,6 +103,16 @@ def svm_loss_vectorized(W, X, y, reg):
   # to reuse some of the intermediate values that you used to compute the     #
   # loss.                                                                     #
   #############################################################################
+
+  dmargins = margins
+  # we need add (num_classes - count(j ==y[i]) times x[i]) since dwj += x[i] (will use row*column rule for that later on)
+  # margin = 0 for j == y[i]
+  dmargins[dmargins > 0] = 1 
+  # for those j == y[i] we need to - (num_classes - count(j ==y[i]) times x[i]) because dwy[i] -= x[i]
+  dmargins[np.arange(X.shape[0]),y] = -np.sum(dmargins,axis=1)
+  dW = X.T.dot(dmargins) # X.T -> every x[j] * how many times x[i] should be + or -
+  dW /= X.shape[0]
+  dW += 2*reg*W
 
   #############################################################################
   #                             END OF YOUR CODE                              #
