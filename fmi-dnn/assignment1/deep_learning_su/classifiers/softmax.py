@@ -31,16 +31,14 @@ def softmax_loss_naive(W, X, y, reg):
   # here, it is easy to run into numeric instability. Don't forget the        #
   # regularization!                                                           #
   #############################################################################
-  eps = 1e-15
   for i in range(X.shape[0]):
     scores = X[i].dot(W)
     scores = np.exp(scores) / np.sum(np.exp(scores), axis=0)
     # deriv(softmax) = scores*(1-scores)
-#     
-    for j in range(y_one_hot.shape[1]):
-        scores[j] = np.clip(scores[j], eps, 1-eps)            
-        loss -= y_one_hot[i,j]*(np.log(scores[j]))
-        dW[:,j] -= X[i]*(scores[j] - y_one_hot[i,j] )
+    
+    for j in range(y_one_hot.shape[1]):          
+        loss += - y_one_hot[i,j]*(np.log(scores[j]))
+        dW[:,j] += X[i]*(scores[j] - y_one_hot[i,j] )
         
   loss = loss / X.shape[0] 
   loss += reg* np.sum(W*W)
@@ -51,7 +49,7 @@ def softmax_loss_naive(W, X, y, reg):
   #############################################################################
 
   
-  return -loss, dW
+  return loss, dW
 
 
 def softmax_loss_vectorized(W, X, y, reg):
@@ -70,10 +68,24 @@ def softmax_loss_vectorized(W, X, y, reg):
   # here, it is easy to run into numeric instability. Don't forget the        #
   # regularization!                                                           #
   #############################################################################
-  pass
+  scores = X.dot(W)
+  scores_exp = np.exp(scores)/ np.sum(np.exp(scores), axis=1)[:,np.newaxis]
+  y_one_hot = np.zeros((y.shape[0],W.shape[1]))
+  y_one_hot[np.arange(y.shape[0]), y] = 1
+  
+  scores_exp_fil = scores_exp * y_one_hot
+  scores_exp_fil = np.ravel(scores_exp_fil)
+  scores_exp_fil = scores_exp_fil [scores_exp_fil>0]
+  
+  loss = np.sum(np.log(scores_exp_fil))
+  loss = loss / X.shape[0]
+  loss += reg* np.sum(W*W)
+  
+  dW /= X.shape[0]
+  dW += reg * 2 * W
   #############################################################################
   #                          END OF YOUR CODE                                 #
   #############################################################################
 
-  return loss, dW
+  return -loss, dW
 
