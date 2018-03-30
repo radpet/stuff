@@ -33,6 +33,7 @@ def softmax_loss_naive(W, X, y, reg):
   #############################################################################
   for i in range(X.shape[0]):
     scores = X[i].dot(W)
+    scores -= np.max(scores)
     scores = np.exp(scores) / np.sum(np.exp(scores), axis=0)
     # deriv(softmax) = scores*(1-scores)
     
@@ -69,6 +70,7 @@ def softmax_loss_vectorized(W, X, y, reg):
   # regularization!                                                           #
   #############################################################################
   scores = X.dot(W)
+  scores -= np.max(scores,axis=1, keepdims=True)
   scores_exp = np.exp(scores)/ np.sum(np.exp(scores), axis=1)[:,np.newaxis]
   y_one_hot = np.zeros((y.shape[0],W.shape[1]))
   y_one_hot[np.arange(y.shape[0]), y] = 1
@@ -77,15 +79,19 @@ def softmax_loss_vectorized(W, X, y, reg):
   scores_exp_fil = np.ravel(scores_exp_fil)
   scores_exp_fil = scores_exp_fil [scores_exp_fil>0]
   
-  loss = np.sum(np.log(scores_exp_fil))
+  loss = -np.sum(np.log(scores_exp_fil))
   loss = loss / X.shape[0]
   loss += reg* np.sum(W*W)
-  
-  dW /= X.shape[0]
+
+  dscores = scores_exp
+  dscores[np.arange(X.shape[0]),y] -= 1 # this is equal to (scores[j] - y_one_hot[i,j] )
+
+  dW = X.T.dot(dscores) / X.shape[0]
+    
   dW += reg * 2 * W
   #############################################################################
   #                          END OF YOUR CODE                                 #
   #############################################################################
 
-  return -loss, dW
+  return loss, dW
 
