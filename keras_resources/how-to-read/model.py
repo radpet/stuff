@@ -98,7 +98,7 @@ def cnn_bilstm(maxlen_doc, maxlen_sentence, corpus_len):
         embedded = MaxPooling1D(pool_size=pool_length)(embedded)
 
     bi_lstm_sent = Bidirectional(
-        LSTM(128, return_sequences=False, dropout=0.15, recurrent_dropout=0.15))(embedded)
+        LSTM(100, return_sequences=False, dropout=0.15, recurrent_dropout=0.15))(embedded)
 
     sent_encode = Dropout(0.3)(bi_lstm_sent)
     encoder = Model(inputs=in_sentence, outputs=sent_encode)
@@ -111,7 +111,7 @@ def cnn_bilstm(maxlen_doc, maxlen_sentence, corpus_len):
     bi_lstm_doc = Bidirectional(LSTM(100, return_sequences=False, dropout=0.1, recurrent_dropout=0.1))(encoded)
 
     output = Dropout(0.3)(bi_lstm_doc)
-    output = Dense(128, activation='relu')(output)
+    output = Dense(32, activation='relu')(output)
     output = Dropout(0.3)(output)
     output = Dense(1, activation='sigmoid')(output)
 
