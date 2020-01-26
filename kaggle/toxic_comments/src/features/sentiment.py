@@ -1,5 +1,4 @@
 import numpy as np
-from scipy.sparse import csr_matrix
 from sklearn.base import BaseEstimator, TransformerMixin
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 
@@ -57,7 +56,7 @@ class VaderSentimentWithMem(BaseEstimator, TransformerMixin):
                 self.cache[sentence] = polarity_scores
 
             scores.append(
-                    np.array([polarity_scores['pos'], polarity_scores['neu'], polarity_scores['neg']]))
+                np.array([polarity_scores['pos'], polarity_scores['neu'], polarity_scores['neg']]))
         print('Feature extraction via VaderSentiment done')
 
         return np.array(scores)
@@ -66,6 +65,7 @@ class VaderSentimentWithMem(BaseEstimator, TransformerMixin):
         if self.model is None:
             self.model = SentimentIntensityAnalyzer()
         return self
+
 
 if __name__ == '__main__':
     vader = VaderSentiment()

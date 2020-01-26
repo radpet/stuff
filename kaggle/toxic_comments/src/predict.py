@@ -12,7 +12,7 @@ def predict_test():
         print('Predicting for',y)
         model = load_trained_model(y+'_TF_IDF_NB_SENTI'+'_ft')
         probs = model.predict_proba(test[TEXT].values)
-        preds[y] = model.predict_proba(probs)[:, 1]
+        preds[y] = probs[:, 1]
 
     subm = pd.DataFrame(preds, index=test['id'])
 

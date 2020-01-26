@@ -1,9 +1,14 @@
 import numpy as np
-from sklearn.model_selection import RandomizedSearchCV, StratifiedKFold
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import classification_report
+from sklearn.model_selection import RandomizedSearchCV, StratifiedKFold, train_test_split
+from sklearn.pipeline import FeatureUnion, make_pipeline
 
-from classifiers import models
+from classifiers import models, nb_tf_idf
+from features.column import ColumnSelector
 from features.sentiment import VaderSentimentWithMem, VaderSentiment
-from util import ys, save_trained_model, load_clean_train, TEXT
+from util import ys, save_trained_model, load_clean_train, TEXT, load_clean_train_senti
 
 MODEL = models['TF_IDF_NB_SENTI']()
 
@@ -20,8 +25,20 @@ def report(results, n_top=3):
             print("")
 
 
-def replace_sentiment_step(model, sentiment):
-    return model.set_params(featureunion__sentiment=sentiment)
+def tf_idf_nb_sent():
+    features = FeatureUnion([
+        ("tfidf", make_pipeline(
+            ColumnSelector(TEXT),
+            nb_tf_idf(TfidfVectorizer(ngram_range=(1, 2),
+                                      min_df=3, max_df=0.9, strip_accents='unicode',
+                                      stop_words='english', use_idf=1,
+                                      smooth_idf=1, sublinear_tf=1, max_features=10000))
+        )),
+        ("sentiment_pos", ColumnSelector('pos')),
+        ("sentiment_neu",ColumnSelector('neu')),
+        ("sentiment_neg",ColumnSelector('neg'))], n_jobs=-1)
+
+    return make_pipeline(features, LogisticRegression(max_iter=1000))
 
 
 def run():
@@ -31,20 +48,25 @@ def run():
         'featureunion__tf_idf__tfidfvectorizer__min_df': (0.01, 0.05),
         'featureunion__tf_idf__tfidfvectorizer__max_features': (10000, 50000),
         'logisticregression__C': [0.01, 0.1, 1, 10],
-        'logisticregression__class_weight': ["balanced"]
     }
 
-    train = load_clean_train()
-    model = replace_sentiment_step(MODEL, VaderSentimentWithMem())
+    train = load_clean_train_senti()
+
+    model = tf_idf_nb_sent()
 
     for y in ys:
         print("Fine tuning for", y)
-        search = RandomizedSearchCV(model, parameters, cv=StratifiedKFold(n_splits=3), n_jobs=-1, n_iter=2,
+        train, test = train_test_split(train, train_size=0.9, stratify=train[y])
+        print(train.shape, test.shape)
+        search = RandomizedSearchCV(model, parameters, cv=StratifiedKFold(n_splits=3), n_iter=2,
                                     scoring='f1', random_state=12345)
-        search.fit(train[TEXT].values, train[y].values)
+        search.fit(train, train[y].values)
         report(search.cv_results_)
-
-        save_trained_model(replace_sentiment_step(search.best_estimator_, VaderSentiment()),
+        clf_report = classification_report(y_pred=model.predict(test), y_true=test[y].values)
+        print(clf_report)
+        with open('./models/clf_{}'.format(y), 'w') as f:
+            f.write(clf_report)
+        save_trained_model(model,
                            "{}_TF_IDF_NB_SENTI_ft".format(y))
 
 

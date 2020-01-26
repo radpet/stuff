@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 
 from clean_comments import clean
+from features.sentiment import VaderSentiment
 
 TOXIC = 'toxic'
 S_TOXIC = 'severe_toxic'
@@ -25,6 +26,19 @@ REPORTS_PATH = 'reports'
 def load_train():
     return pd.read_csv('./data/train.csv')
 
+
+def load_clean_train_senti():
+    train = load_clean_train()
+
+    sentiment = VaderSentiment().fit_transform(train[TEXT])
+
+    train['pos'] = sentiment[:,0]
+    train['neu'] = sentiment[:,1]
+    train['neg'] = sentiment[:,2]
+
+    train.to_csv('./data/train_clean_senti.csv')
+
+    return train
 
 def load_clean_train():
     clean_path = './data/train_clean.csv'
@@ -48,6 +62,8 @@ def load_clean_train():
 
 def load_test():
     return pd.read_csv('./data/test.csv')
+
+
 
 
 def load_clean_test():
