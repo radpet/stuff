@@ -65,6 +65,7 @@ def load_clean_test():
     test.to_csv(clean_path, index=False)
     return test
 
+
 def save_trained_model(obj, model_name):
     trained_path = './models/'
 
@@ -78,9 +79,10 @@ def save_trained_model(obj, model_name):
 
 
 def load_trained_model(model_name):
-    path = os.path.join( './models/', model_name)
+    path = os.path.join('./models/', model_name)
     print('Loading model from', path)
     return load_obj(path)
+
 
 class AbstractTrainReport:
     def __init__(self, scorer, path):

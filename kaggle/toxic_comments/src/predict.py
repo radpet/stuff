@@ -10,7 +10,7 @@ def predict_test():
     preds = {}
     for y in ys:
         print('Predicting for',y)
-        model = load_trained_model(y+'_TF_IDF_NB_SENTI')
+        model = load_trained_model(y+'_TF_IDF_NB_SENTI'+'_ft')
         probs = model.predict_proba(test[TEXT].values)
         preds[y] = model.predict_proba(probs)[:, 1]
 

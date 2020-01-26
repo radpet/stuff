@@ -62,10 +62,10 @@ def find_best_model(train, y):
 
 def run():
     train = load_clean_train()
-    # for y in ys[:1]:
-    #     find_best_model(train, y)
+    for y in ys:
+        find_best_model(train, y)
 
-    train_models(train)
+    # train_models(train)
 
 
 def train_models(train):
