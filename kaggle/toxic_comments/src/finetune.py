@@ -5,12 +5,9 @@ from sklearn.metrics import classification_report
 from sklearn.model_selection import RandomizedSearchCV, StratifiedKFold, train_test_split
 from sklearn.pipeline import FeatureUnion, make_pipeline
 
-from classifiers import models, nb_tf_idf
+from classifiers import nb_tf_idf
 from features.column import ColumnSelector
-from features.sentiment import VaderSentimentWithMem, VaderSentiment
-from util import ys, save_trained_model, load_clean_train, TEXT, load_clean_train_senti
-
-MODEL = models['TF_IDF_NB_SENTI']()
+from util import ys, save_trained_model, TEXT, load_clean_train_senti
 
 
 def report(results, n_top=3):
@@ -34,39 +31,40 @@ def tf_idf_nb_sent():
                                       stop_words='english', use_idf=1,
                                       smooth_idf=1, sublinear_tf=1, max_features=10000))
         )),
-        ("sentiment_pos", ColumnSelector('pos')),
-        ("sentiment_neu",ColumnSelector('neu')),
-        ("sentiment_neg",ColumnSelector('neg'))], n_jobs=-1)
+        ("sentiment", ColumnSelector(['pos', 'neu', 'neg']))
+    ], n_jobs=-1)
 
-    return make_pipeline(features, LogisticRegression(max_iter=1000))
+    return make_pipeline(features, LogisticRegression(max_iter=1000, class_weight='balanced'))
 
 
 def run():
-    print(MODEL.get_params().keys())
     parameters = {
-        'featureunion__tf_idf__tfidfvectorizer__max_df': (0.5, 0.75, 1.0),
-        'featureunion__tf_idf__tfidfvectorizer__min_df': (0.01, 0.05),
-        'featureunion__tf_idf__tfidfvectorizer__max_features': (10000, 50000),
+        'featureunion__tfidf__pipeline__tfidfvectorizer__max_df': (0.5, 0.75, 1.0),
+        'featureunion__tfidf__pipeline__tfidfvectorizer__min_df': (0.01, 0.05),
+        'featureunion__tfidf__pipeline__tfidfvectorizer__max_features': (10000, 50000),
         'logisticregression__C': [0.01, 0.1, 1, 10],
     }
 
-    train = load_clean_train_senti()
-
     model = tf_idf_nb_sent()
+    print(model.get_params().keys())
+
+    train = load_clean_train_senti()
 
     for y in ys:
         print("Fine tuning for", y)
         train, test = train_test_split(train, train_size=0.9, stratify=train[y])
         print(train.shape, test.shape)
         search = RandomizedSearchCV(model, parameters, cv=StratifiedKFold(n_splits=3), n_iter=2,
-                                    scoring='f1', random_state=12345)
+                                    scoring='f1', random_state=12345, n_jobs=-1)
+
         search.fit(train, train[y].values)
+
         report(search.cv_results_)
-        clf_report = classification_report(y_pred=model.predict(test), y_true=test[y].values)
+        clf_report = classification_report(y_pred=search.best_estimator_.predict(test), y_true=test[y].values)
         print(clf_report)
         with open('./models/clf_{}'.format(y), 'w') as f:
             f.write(clf_report)
-        save_trained_model(model,
+        save_trained_model(search.best_estimator_,
                            "{}_TF_IDF_NB_SENTI_ft".format(y))
 
 

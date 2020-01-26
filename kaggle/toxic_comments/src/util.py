@@ -29,14 +29,19 @@ def load_train():
 
 def load_clean_train_senti():
     train = load_clean_train()
+    path = './data/train_clean_senti.csv'
 
-    sentiment = VaderSentiment().fit_transform(train[TEXT])
+    if os.path.exists(path):
+        print('Train has been already cleaned. Loading..')
+        return pd.read_csv(path)
+    else:
+        sentiment = VaderSentiment().fit_transform(train[TEXT])
 
-    train['pos'] = sentiment[:,0]
-    train['neu'] = sentiment[:,1]
-    train['neg'] = sentiment[:,2]
+        train['pos'] = sentiment[:,0]
+        train['neu'] = sentiment[:,1]
+        train['neg'] = sentiment[:,2]
 
-    train.to_csv('./data/train_clean_senti.csv')
+        train.to_csv(path, index=False)
 
     return train
 
