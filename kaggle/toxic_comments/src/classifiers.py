@@ -11,44 +11,70 @@ from sklearn.svm import LinearSVC
 from sklearn.utils.validation import check_is_fitted
 from tensorflow_core.python.keras.callbacks import EarlyStopping
 
+from features.column import ColumnSelector
 from features.nbweights import NBWeights
 from features.sentiment import VaderSentiment
 from features.use_embeddings import USEEncoder
+from util import TEXT
 
 
 def tf_idf_svm_pipeline():
-    return make_pipeline(TfidfVectorizer(), LinearSVC())
+    features = FeatureUnion([
+        ("tfidf", make_pipeline(
+            ColumnSelector(TEXT),
+            TfidfVectorizer(stop_words='english')
+        )),
+        ("sentiment", ColumnSelector(['pos', 'neu', 'neg']))
+    ], n_jobs=-1)
+    return make_pipeline(features, LinearSVC(class_weight='balanced'))
 
 
 def tf_idf_logistic():
-    return make_pipeline(TfidfVectorizer(stop_words='english'),
-                         LogisticRegression(C=5, class_weight='balanced', n_jobs=-1, max_iter=1000))
+    features = FeatureUnion([
+        ("tfidf", make_pipeline(
+            ColumnSelector(TEXT),
+            TfidfVectorizer(stop_words='english')
+        )),
+        ("sentiment", ColumnSelector(['pos', 'neu', 'neg']))
+    ], n_jobs=-1)
+    return make_pipeline(features, LogisticRegression(C=5, class_weight='balanced', n_jobs=-1, max_iter=1000))
 
 
 def bow_logistic():
-    return make_pipeline(CountVectorizer(stop_words='english'),
+    features = FeatureUnion([
+        ("tfidf", make_pipeline(
+            ColumnSelector(TEXT),
+            CountVectorizer(stop_words='english')
+        )),
+        ("sentiment", ColumnSelector(['pos', 'neu', 'neg']))
+    ], n_jobs=-1)
+
+    return make_pipeline(features,
                          LogisticRegression(class_weight='balanced', n_jobs=-1, max_iter=1000))
 
 
 def tf_idf_multi_nb():
-    return make_pipeline(TfidfVectorizer(), MultinomialNB())
-
-
-def bow_multi_nb():
-    return make_pipeline(CountVectorizer(stop_words='english'), MultinomialNB())
+    features = FeatureUnion([
+        ("tfidf", make_pipeline(
+            ColumnSelector(TEXT),
+            TfidfVectorizer(stop_words='english')
+        )),
+        ("sentiment", ColumnSelector(['pos', 'neu', 'neg']))
+    ], n_jobs=-1)
+    return make_pipeline(features, MultinomialNB())
 
 
 def use_svm_pipeline():
-    return make_pipeline(USEEncoder(), LinearSVC())
+    return make_pipeline(ColumnSelector(TEXT), USEEncoder(), LinearSVC(class_weight='balanced'))
 
 
 def use_random_forest():
-    return make_pipeline(USEEncoder(),
+    return make_pipeline(ColumnSelector(TEXT), USEEncoder(),
                          RandomForestClassifier(n_estimators=10, random_state=1234, class_weight='balanced'))
 
 
 def use_logistic():
-    return make_pipeline(USEEncoder(), LogisticRegression(class_weight='balanced', max_iter=1000))
+    return make_pipeline(ColumnSelector(TEXT), USEEncoder(), LogisticRegression(class_weight='balanced', max_iter=1000))
 
 
 def bow_xgboost():
@@ -56,17 +82,26 @@ def bow_xgboost():
                          xgb.XGBClassifier(random_state=1234, learning_rate=0.01))
 
 
-def tf_idf_xgboost():
-    return make_pipeline(TfidfVectorizer(),
+def tf_idf_senti_xgboost():
+    features = FeatureUnion([
+        ("tfidf", make_pipeline(
+            ColumnSelector(TEXT),
+            TfidfVectorizer()
+        )),
+        ("sentiment", ColumnSelector(['pos', 'neu', 'neg']))
+    ], n_jobs=-1)
+    return make_pipeline(features,
                          xgb.XGBClassifier(random_state=1234, learning_rate=0.01))
 
 
 def tf_idf_nb_senti_xgboost():
-    features = FeatureUnion([("tf_idf", nb_tf_idf(TfidfVectorizer(ngram_range=(1, 2),
-                                                                  min_df=3, max_df=0.9, strip_accents='unicode',
-                                                                  stop_words='english', use_idf=1,
-                                                                  smooth_idf=1, sublinear_tf=1, max_features=10000))),
-                             ("sentiment", VaderSentiment())], n_jobs=-1)
+    features = FeatureUnion([
+        ("tfidf", make_pipeline(
+            ColumnSelector(TEXT),
+            nb_tf_idf(TfidfVectorizer())
+        )),
+        ("sentiment", ColumnSelector(['pos', 'neu', 'neg']))
+    ], n_jobs=-1)
 
     return make_pipeline(features, xgb.XGBClassifier(random_state=1234, learning_rate=0.01))
 
@@ -77,12 +112,15 @@ def nb_tf_idf(tf_idf_vect):
     return make_pipeline(tf_idf_vect, NBWeights())
 
 
-def tf_idf_nb():
-    return make_pipeline(nb_tf_idf(TfidfVectorizer(ngram_range=(1, 2),
-                                                   min_df=3, max_df=0.9, strip_accents='unicode', stop_words='english',
-                                                   use_idf=1,
-                                                   smooth_idf=1, sublinear_tf=1, max_features=10000)),
-                         LogisticRegression(max_iter=1000))
+def tf_idf_nb_senti_logistic():
+    features = FeatureUnion([
+        ("tfidf", make_pipeline(
+            ColumnSelector(TEXT),
+            nb_tf_idf(TfidfVectorizer(stop_words='english'))
+        )),
+        ("sentiment", ColumnSelector(['pos', 'neu', 'neg']))
+    ], n_jobs=-1)
+    return make_pipeline(features, LogisticRegression(C=5, class_weight='balanced', n_jobs=-1, max_iter=1000))
 
 
 class USEDenseModel(BaseEstimator, ClassifierMixin):
@@ -124,32 +162,20 @@ def use_dense_small():
     return USEDenseModel()
 
 
-def tf_idf_nb_sent():
-    features = FeatureUnion([("tf_idf", nb_tf_idf(TfidfVectorizer(ngram_range=(1, 2),
-                                                                  min_df=3, max_df=0.9, strip_accents='unicode',
-                                                                  stop_words='english', use_idf=1,
-                                                                  smooth_idf=1, sublinear_tf=1, max_features=10000))),
-                             ("sentiment", VaderSentiment())], n_jobs=-1)
-
-    return make_pipeline(features, LogisticRegression(max_iter=1000))
-
 
 models = {
-    # 'TF_IDF_SVM': tf_idf_svm_pipeline,
+    'TF_IDF_SVM': tf_idf_svm_pipeline,
     # 'COUNT_SVM': tf_idf_svm_pipeline,
-    # 'USE_SVM': use_svm_pipeline,
+    'USE_SVM': use_svm_pipeline,
     # 'USE_DENSE_SMALL': use_dense_small
     'TF_IDF_MILTI_MB': tf_idf_multi_nb,
     'TF_IDF_LOGISTIC': tf_idf_logistic,
     'BOW_XGBOOST': bow_xgboost,
-    'TF_IDF_XGBOOST': tf_idf_xgboost,
-    'TF_IDF_NB': tf_idf_nb,
+    'TF_IDF_NB_SENTI_XGBOOST': tf_idf_nb_senti_xgboost,
     'BOW_LOGISTIC': bow_logistic,
-    'BOW_MULTI_NB': bow_multi_nb,
     # 'USE_RANDOM_FOREST': use_random_forest,
     'USE_LOGISTIC': use_logistic,
-    'TF_IDF_NB_SENTI': tf_idf_nb_sent,
-    'TF_IDF_NB_SENTI_XGBOOST': tf_idf_nb_senti_xgboost
+    'TF_IDF_NB_SENTI': tf_idf_nb_senti_logistic,
 }
 
 if __name__ == '__main__':

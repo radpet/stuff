@@ -1,13 +1,13 @@
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import classification_report
+from sklearn.metrics import classification_report, confusion_matrix, f1_score
 from sklearn.model_selection import RandomizedSearchCV, StratifiedKFold, train_test_split
 from sklearn.pipeline import FeatureUnion, make_pipeline
 
 from classifiers import nb_tf_idf
 from features.column import ColumnSelector
-from util import ys, save_trained_model, TEXT, load_clean_train_senti
+from util import ys, TEXT, load_clean_train_senti
 
 
 def report(results, n_top=3):
@@ -31,7 +31,8 @@ def tf_idf_nb_sent():
                                       stop_words='english', use_idf=1,
                                       smooth_idf=1, sublinear_tf=1, max_features=10000))
         )),
-        ("sentiment", ColumnSelector(['pos', 'neu', 'neg']))
+        ("sentiment", ColumnSelector(['pos', 'neu', 'neg'])),
+        ("hate_model", ColumnSelector(['hate_model']))
     ], n_jobs=-1)
 
     return make_pipeline(features, LogisticRegression(max_iter=1000, class_weight='balanced'))
@@ -60,12 +61,21 @@ def run():
         search.fit(train, train[y].values)
 
         report(search.cv_results_)
-        clf_report = classification_report(y_pred=search.best_estimator_.predict(test), y_true=test[y].values)
+        preds = search.best_estimator_.predict(test)
+        f1score = round(f1_score(y_pred=preds, y_true=test[y].values), 3)
+        print(f1score)
+        clf_report = classification_report(y_pred=preds, y_true=test[y].values)
         print(clf_report)
-        with open('./models/clf_{}'.format(y), 'w') as f:
+
+        conf_matrix = confusion_matrix(y_pred=preds, y_true=test[y].values)
+
+        with open('./models/clf_report_{}_{}'.format(y, f1score), 'w') as f:
             f.write(clf_report)
-        save_trained_model(search.best_estimator_,
-                           "{}_TF_IDF_NB_SENTI_ft".format(y))
+        with open('./models/clf_conf_matrix_{}_{}'.format(y, f1score), 'w') as f:
+            f.write(str(conf_matrix))
+
+        # save_trained_model(search.best_estimator_,
+        #                    "{}_TF_IDF_NB_SENTI_ft".format(y))
 
 
 if __name__ == '__main__':

@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 
 from clean_comments import clean
+from features.hate_model import HateModel
 from features.sentiment import VaderSentiment
 
 TOXIC = 'toxic'
@@ -30,20 +31,25 @@ def load_train():
 def load_clean_train_senti():
     train = load_clean_train()
     path = './data/train_clean_senti.csv'
-
     if os.path.exists(path):
-        print('Train has been already cleaned. Loading..')
-        return pd.read_csv(path)
-    else:
-        sentiment = VaderSentiment().fit_transform(train[TEXT])
+        print('Loading..')
+        df = pd.read_csv(path)
+        df[TEXT] = train[TEXT] #problem with serialization
+        return df
 
-        train['pos'] = sentiment[:,0]
-        train['neu'] = sentiment[:,1]
-        train['neg'] = sentiment[:,2]
 
-        train.to_csv(path, index=False)
+    train['hate_model'] = HateModel('./data/hate_model.pkl').fit_transform(train[TEXT])
+
+    sentiment = VaderSentiment().fit_transform(train[TEXT])
+
+    train['pos'] = sentiment[:, 0]
+    train['neu'] = sentiment[:, 1]
+    train['neg'] = sentiment[:, 2]
+
+    train.to_csv(path, index=False)
 
     return train
+
 
 def load_clean_train():
     clean_path = './data/train_clean.csv'
@@ -67,8 +73,6 @@ def load_clean_train():
 
 def load_test():
     return pd.read_csv('./data/test.csv')
-
-
 
 
 def load_clean_test():
