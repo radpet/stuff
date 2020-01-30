@@ -1,13 +1,11 @@
 import os
-import traceback
 from datetime import datetime
 
 import numpy as np
-from sklearn.metrics import log_loss, classification_report, confusion_matrix
 from sklearn.model_selection import StratifiedKFold, cross_val_score
 
 from classifiers import models
-from util import TEXT, BestModel, ys, load_clean_train, TrainReport, save_trained_model, load_clean_train_senti
+from util import TEXT, ys, save_trained_model, load_clean_train_senti
 
 
 def find_best_model(train, y):
@@ -25,10 +23,18 @@ def find_best_model(train, y):
         try:
             print('Training model', model_name)
             model = model_def()
-            scores = cross_val_score(model, train, y, scoring="f1",cv=kf)
-            print('Mean f1 score of {} is {}'.format(model_name, np.mean(scores)))
-        finally:
-            print('Error training',model_name, 'Skipping.')
+            scores = cross_val_score(model, train, train[y], scoring="f1", cv=kf)
+            mean_score = round(np.mean(scores), 3)
+            print('Mean f1 score of {} is {}'.format(model_name, mean_score))
+            # preds = cross_val_predict(model, train, train[y], n_jobs=-1)
+            # conf_matrix = confusion_matrix(y_true=train[y], y_pred=preds)
+            # print(conf_matrix)
+            with open(os.path.join(time_path, '{}_{}_{}'.format(y, model_name, mean_score)), 'w') as f:
+                f.write(str(mean_score))
+
+        except Exception as e:
+            print(e)
+            print('Error training', model_name, 'Skipping.')
 
 
 def run():
